@@ -1,65 +1,52 @@
-import React from "react";
-import './App.css';
-import Titles from "./components/Titles";
-import Form from "./components/Form";
-import Weather from "./components/Weather";
+import React, { Component } from 'react';
+import _ from 'lodash';
 
-const API_KEY = "af47127d9c28faab7a1f8bc3e4eea9a5";
+import SearchBar from './components/SearchBar';
+import YTSearch from 'youtube-api-search'; 
+import VideoList from './components/VideoList';
+import VideoDetail from './components/VideoDetail';
 
-class App extends React.Component {
-    state = {
-      temperature: undefined,
-      city: undefined,
-      country:undefined,
-      humidity:undefined,
-      description: undefined,
-      error:undefined
+import styles from './styles/style.css';
+const API_KEY = 'AIzaSyCazvzWGihtmyg5_2usra_y7SEgusLZ3zI'; // Youtube API key
+
+class App extends Component {
+
+    constructor(props){
+        super (props);
+
+        this.state = { 
+            videos: [],
+            selectedVideo: null
+        };
+
+        this.videoSearch('Gary Vaynerchuk');
     }
 
+    videoSearch(term) {
+        YTSearch({key: API_KEY, term: term}, (videos) => {
+            this.setState({ 
+                videos: videos, 
+                selectedVideo: videos[0]
+            });
+        });
+    }
 
-  getWeather = async (e) => {
-    e.preventDefault();
-    const city = e.target.elements.city.value;
-    const country = e.target.elements.country.value;
-    const api_call = await fetch(`http://api.openweathermap.org/data/2.5/weather?q=${city},${country}&appid=${API_KEY}&units=metric`);
-      const data = await api_call.json();
-      if (city && country){
-        console.log(data)
-        this.setState({
-          temperature:data.main.temp,
-          city:data.name,
-          country:data.sys.country,
-          humidity:data.main.humidity,
-          description:data.weather[0].description,
-          error:""
-        })
-      } else{
-        this.setState({
-          temperature:undefined,
-          city:undefined,
-          country:undefined,
-          humidity:undefined,
-          description:undefined,
-          error:"Please fill the Input fields"
-        })
-      }
-  }
-  render() {
-    return (
-    <div className="weatherContainerApp">
-      <Titles/>
-      <Form getWeather={this.getWeather}/>
-      <Weather 
-      temperature={this.state.temperature}
-      city={this.state.city}
-      country = {this.state.country}
-      humidity={this.state.humidity}
-      description={this.state.description}
-      error={this.state.error}
-      />
-    </div>
-    );
-  }
-};
+    render () {
+        const videoSearch = _.debounce((term)=> {this.videoSearch(term)}, 300);
+        
+        return (
+            <div>
+                <SearchBar onSearchTermChange = {videoSearch}/>
+                    <VideoDetail video = {this.state.selectedVideo}/>
+                
+                <VideoList 
+                onVideoSelect = { selectedVideo => this.setState({selectedVideo})}
+                videos={this.state.videos}
+                />
+
+            </div>
+        );
+    }
+}
 
 export default App;
